@@ -1,9 +1,4 @@
 import Product from '../models/Product.js';
-import mongoose from 'mongoose';
-
-// Debug: Verificar estado de la conexión de MongoDB
-console.log('Estado de conexión MongoDB:', mongoose.connection.readyState);
-// 0 = desconectado, 1 = conectado, 2 = conectando, 3 = desconectando
 
 // Obtener todos los productos con filtros opcionales
 const getProducts = async (req, res) => {
@@ -26,50 +21,6 @@ const getProducts = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener productos:', error);
     res.status(500).json({ message: error.message });
-  }
-};
-
-// Obtener todas las categorías únicas (versión robusta)
-const getCategories = async (req, res) => {
-  try {
-    console.log('Obteniendo categorías...');
-    
-    // Verificar si hay productos en la colección
-    const countProducts = await Product.countDocuments();
-    console.log(`Total de productos en la base de datos: ${countProducts}`);
-
-    if (countProducts === 0) {
-      console.log('No hay productos en la base de datos');
-      return res.json([]);
-    }
-    
-    // Enfoque alternativo para extraer categorías
-    const products = await Product.find({}, 'category');
-    console.log(`Productos recuperados para categorías: ${products.length}`);
-    
-    // Extraer categorías manualmente
-    const categoriesSet = new Set();
-    products.forEach(product => {
-      if (product.category && 
-          typeof product.category === 'string' && 
-          product.category.trim() !== '' &&
-          product.category !== 'General') {
-        categoriesSet.add(product.category.trim());
-      }
-    });
-    
-    // Convertir Set a Array
-    const categoriesArray = Array.from(categoriesSet);
-    console.log('Categorías extraídas:', categoriesArray);
-    
-    return res.json(categoriesArray);
-  } catch (error) {
-    console.error('Error detallado al obtener categorías:', error);
-    console.error('Stack de error:', error.stack);
-    return res.status(500).json({ 
-      message: 'Error al obtener categorías', 
-      error: error.message 
-    });
   }
 };
 
@@ -98,7 +49,6 @@ const createProduct = async (req, res) => {
   try {
     console.log('Datos recibidos para crear producto:', req.body);
     
-    // No asignar "General" como predeterminado
     const product = await Product.create(req.body);
     console.log('Producto creado:', product);
     
@@ -163,4 +113,5 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-export { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories };
+// Ya no exportamos getCategories
+export { getProducts, getProduct, createProduct, updateProduct, deleteProduct };

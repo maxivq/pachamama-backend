@@ -4,8 +4,7 @@ import {
   getProduct, 
   createProduct, 
   updateProduct, 
-  deleteProduct,
-  getCategories
+  deleteProduct
 } from '../controllers/productController.js';
 import { protectAdminRoute } from '../middleware/authMiddleware.js';
 
@@ -13,7 +12,8 @@ const router = express.Router();
 
 // Rutas públicas
 router.route('/').get(getProducts);
-router.route('/categories').get(getCategories);
+// Eliminamos esta ruta problemática:
+// router.route('/categories').get(getCategories);
 router.route('/:id').get(getProduct);
 
 // Rutas protegidas

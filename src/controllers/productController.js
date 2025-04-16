@@ -26,23 +26,32 @@ const getProducts = async (req, res) => {
 // Obtener todas las categorías únicas (versión mejorada)
 const getCategories = async (req, res) => {
   try {
+    // Añadir log para depuración
+    console.log('Obteniendo categorías...');
+    
     // Obtener categorías únicas de todos los productos
     const categories = await Product.distinct('category');
     
-    // Filtrar valores nulos o vacíos y asegurar que 'General' esté presente solo una vez
-    const validCategories = categories
-      .filter(cat => cat && cat.trim() !== '')
-      .filter((cat, index, self) => self.indexOf(cat) === index);
+    console.log('Categorías obtenidas de la base de datos:', categories);
     
-    // Asegurar que 'General' esté presente
-    if (!validCategories.includes('General')) {
-      validCategories.push('General');
+    // Verificar que categories sea un array antes de aplicar filtros
+    if (!Array.isArray(categories)) {
+      console.log('categories no es un array, devolviendo array vacío');
+      return res.json([]);
     }
     
-    res.json(validCategories);
+    // Filtrar valores nulos o vacíos y eliminar duplicados
+    const validCategories = categories
+      .filter(cat => cat && typeof cat === 'string' && cat.trim() !== '')
+      .filter((cat, index, self) => self.indexOf(cat) === index)
+      .filter(cat => cat !== 'General'); // Eliminar "General" de las categorías
+    
+    console.log('Categorías filtradas a enviar:', validCategories);
+    
+    return res.json(validCategories);
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
-    res.status(500).json({ message: 'Error al obtener categorías' });
+    console.error('Error detallado al obtener categorías:', error);
+    return res.status(500).json({ message: 'Error al obtener categorías', error: error.message });
   }
 };
 

@@ -39,7 +39,7 @@ app.post('/api/products', protectAdminRoute, createProduct);
 app.put('/api/products/:id', protectAdminRoute, updateProduct);
 app.delete('/api/products/:id', protectAdminRoute, deleteProduct);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);

@@ -1,4 +1,9 @@
 import Product from '../models/Product.js';
+import mongoose from 'mongoose';
+
+// Debug: Verificar estado de la conexión de MongoDB
+console.log('Estado de conexión MongoDB:', mongoose.connection.readyState);
+// 0 = desconectado, 1 = conectado, 2 = conectando, 3 = desconectando
 
 // Obtener todos los productos con filtros opcionales
 const getProducts = async (req, res) => {
@@ -19,39 +24,52 @@ const getProducts = async (req, res) => {
     const products = await Product.find(query);
     res.json(products);
   } catch (error) {
+    console.error('Error al obtener productos:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Obtener todas las categorías únicas (versión mejorada)
+// Obtener todas las categorías únicas (versión robusta)
 const getCategories = async (req, res) => {
   try {
-    // Añadir log para depuración
     console.log('Obteniendo categorías...');
     
-    // Obtener categorías únicas de todos los productos
-    const categories = await Product.distinct('category');
-    
-    console.log('Categorías obtenidas de la base de datos:', categories);
-    
-    // Verificar que categories sea un array antes de aplicar filtros
-    if (!Array.isArray(categories)) {
-      console.log('categories no es un array, devolviendo array vacío');
+    // Verificar si hay productos en la colección
+    const countProducts = await Product.countDocuments();
+    console.log(`Total de productos en la base de datos: ${countProducts}`);
+
+    if (countProducts === 0) {
+      console.log('No hay productos en la base de datos');
       return res.json([]);
     }
     
-    // Filtrar valores nulos o vacíos y eliminar duplicados
-    const validCategories = categories
-      .filter(cat => cat && typeof cat === 'string' && cat.trim() !== '')
-      .filter((cat, index, self) => self.indexOf(cat) === index)
-      .filter(cat => cat !== 'General'); // Eliminar "General" de las categorías
+    // Enfoque alternativo para extraer categorías
+    const products = await Product.find({}, 'category');
+    console.log(`Productos recuperados para categorías: ${products.length}`);
     
-    console.log('Categorías filtradas a enviar:', validCategories);
+    // Extraer categorías manualmente
+    const categoriesSet = new Set();
+    products.forEach(product => {
+      if (product.category && 
+          typeof product.category === 'string' && 
+          product.category.trim() !== '' &&
+          product.category !== 'General') {
+        categoriesSet.add(product.category.trim());
+      }
+    });
     
-    return res.json(validCategories);
+    // Convertir Set a Array
+    const categoriesArray = Array.from(categoriesSet);
+    console.log('Categorías extraídas:', categoriesArray);
+    
+    return res.json(categoriesArray);
   } catch (error) {
     console.error('Error detallado al obtener categorías:', error);
-    return res.status(500).json({ message: 'Error al obtener categorías', error: error.message });
+    console.error('Stack de error:', error.stack);
+    return res.status(500).json({ 
+      message: 'Error al obtener categorías', 
+      error: error.message 
+    });
   }
 };
 
@@ -65,11 +83,9 @@ const getProduct = async (req, res) => {
         error: 'Producto no encontrado'
       });
     }
-    res.status(200).json({
-      success: true,
-      data: product
-    });
+    res.status(200).json(product);
   } catch (error) {
+    console.error('Error al obtener producto específico:', error);
     res.status(500).json({
       success: false,
       error: 'Error del servidor'
@@ -80,17 +96,15 @@ const getProduct = async (req, res) => {
 // Crear un nuevo producto
 const createProduct = async (req, res) => {
   try {
-    // Asegurarnos de que se incluya la categoría
-    if (!req.body.category) {
-      req.body.category = 'General';
-    }
+    console.log('Datos recibidos para crear producto:', req.body);
     
+    // No asignar "General" como predeterminado
     const product = await Product.create(req.body);
-    res.status(201).json({
-      success: true,
-      data: product
-    });
+    console.log('Producto creado:', product);
+    
+    res.status(201).json(product);
   } catch (error) {
+    console.error('Error al crear producto:', error);
     res.status(400).json({
       success: false,
       error: error.message
@@ -101,21 +115,24 @@ const createProduct = async (req, res) => {
 // Actualizar un producto
 const updateProduct = async (req, res) => {
   try {
+    console.log(`Actualizando producto ${req.params.id}:`, req.body);
+    
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });
+    
     if (!product) {
       return res.status(404).json({
         success: false,
         error: 'Producto no encontrado'
       });
     }
-    res.status(200).json({
-      success: true,
-      data: product
-    });
+    
+    console.log('Producto actualizado:', product);
+    res.status(200).json(product);
   } catch (error) {
+    console.error('Error al actualizar producto:', error);
     res.status(400).json({
       success: false,
       error: error.message
@@ -138,6 +155,7 @@ const deleteProduct = async (req, res) => {
       data: {}
     });
   } catch (error) {
+    console.error('Error al eliminar producto:', error);
     res.status(500).json({
       success: false,
       error: 'Error del servidor'

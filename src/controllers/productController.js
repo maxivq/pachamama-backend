@@ -23,13 +23,26 @@ const getProducts = async (req, res) => {
   }
 };
 
-// Obtener todas las categorías únicas
+// Obtener todas las categorías únicas (versión mejorada)
 const getCategories = async (req, res) => {
   try {
+    // Obtener categorías únicas de todos los productos
     const categories = await Product.distinct('category');
-    res.json(categories);
+    
+    // Filtrar valores nulos o vacíos y asegurar que 'General' esté presente solo una vez
+    const validCategories = categories
+      .filter(cat => cat && cat.trim() !== '')
+      .filter((cat, index, self) => self.indexOf(cat) === index);
+    
+    // Asegurar que 'General' esté presente
+    if (!validCategories.includes('General')) {
+      validCategories.push('General');
+    }
+    
+    res.json(validCategories);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener categorías:', error);
+    res.status(500).json({ message: 'Error al obtener categorías' });
   }
 };
 
@@ -58,6 +71,11 @@ const getProduct = async (req, res) => {
 // Crear un nuevo producto
 const createProduct = async (req, res) => {
   try {
+    // Asegurarnos de que se incluya la categoría
+    if (!req.body.category) {
+      req.body.category = 'General';
+    }
+    
     const product = await Product.create(req.body);
     res.status(201).json({
       success: true,
@@ -117,6 +135,5 @@ const deleteProduct = async (req, res) => {
     });
   }
 };
-
 
 export { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories };

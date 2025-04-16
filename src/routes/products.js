@@ -4,17 +4,19 @@ import {
   getProduct, 
   createProduct, 
   updateProduct, 
-  deleteProduct 
+  deleteProduct,
+  getCategories
 } from '../controllers/productController.js';
 import { protectAdminRoute } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Rutas públicas (GET)
+// Rutas públicas
 router.route('/').get(getProducts);
+router.route('/categories').get(getCategories);
 router.route('/:id').get(getProduct);
 
-// Rutas protegidas (POST, PUT, DELETE)
+// Rutas protegidas
 router.route('/').post(protectAdminRoute, createProduct);
 router.route('/:id')
   .put(protectAdminRoute, updateProduct)

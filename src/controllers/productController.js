@@ -1,19 +1,35 @@
 import Product from '../models/Product.js';
 
-// Obtener todos los productos
+// Obtener todos los productos con filtros opcionales
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
-    res.status(200).json({
-      success: true,
-      count: products.length,
-      data: products
-    });
+    const { search, category } = req.query;
+    let query = {};
+    
+    // Filtrar por término de búsqueda
+    if (search) {
+      query.title = { $regex: search, $options: 'i' };
+    }
+    
+    // Filtrar por categoría
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    const products = await Product.find(query);
+    res.json(products);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Error del servidor'
-    });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Obtener todas las categorías únicas
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct('category');
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -102,4 +118,5 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-export { getProducts, getProduct, createProduct, updateProduct, deleteProduct };
+
+export { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories };
